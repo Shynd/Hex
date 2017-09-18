@@ -1,6 +1,7 @@
 #include <Windows.h>
 #include <stdio.h>
 #include <iostream>
+#include <atlstr.h>
 
 // MS Detours...
 #pragma comment(lib, "detours.lib")
@@ -33,6 +34,22 @@ HANDLE WINAPI HookCreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD d
 							  LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes,
 							  HANDLE hTemplateFile) {
 	std::wcout << "CreateFileW: " << lpFileName << std::endl;
+
+	// Before calling the original function, we want to
+	// check whether the file accessed is a background image for a beatmap.
+	// And if so, change the 'lpFileName' with a custom path.
+	// TODO: This hack is ugly as all hell, do it better.
+	LPCWSTR replacement = L"C:\\Users\\HK\\Pictures\\listen.jpg";
+	std::string jpgExt = ".jpg";
+	std::string jpegExt = ".jpeg";
+	std::string pngExt = "'.png";
+	std::string fileName = CW2A(lpFileName);
+
+	if (fileName.find(jpgExt) != std::string::npos || fileName.find(pngExt) != std::string::npos || fileName.find(jpgExt) != std::string::npos) {
+		//std::wcout << "Inside HookCreateFileW: " << lpFileName << std::endl;
+		std::wcout << "Changing '" << lpFileName << "' into '" << replacement << "'\n";
+		lpFileName = replacement;
+	}
 
 	// Call the original function.
 	return OrigCreateFileW(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes,
