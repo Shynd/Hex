@@ -11,6 +11,7 @@
 #include <detours.h>
 
 LPCWSTR ReplacementPath;
+bool ShowConsole = false;
 
 /*
  * CreateFileW(
@@ -134,8 +135,27 @@ DWORD WINAPI OnDllAttach(LPVOID base) {
 	std::cout << "Installing hooks.\n";
 	InstallHooks();
 
-	// TODO: Setup a hotkey to bring up the image selection dialog.
-	ChangeBackgroundImage();
+	// Done setting up, make the user aware.
+	std::cout << "Done setting up! Press 'Home' in order to bring up the image selection dialog!\n";
+	ShowWindow(GetConsoleWindow(), SW_HIDE);
+
+	while (true) {
+		if (GetAsyncKeyState(0x24 /* Home */)) {
+			ChangeBackgroundImage();
+		}
+		else if (GetAsyncKeyState(0x23 /* End */)) {
+			if (ShowConsole) {
+				ShowWindow(GetConsoleWindow(), SW_HIDE);
+				ShowConsole = false;
+			}
+			else {
+				ShowWindow(GetConsoleWindow(), SW_SHOW);
+				ShowConsole = true;
+			}
+		}
+
+		Sleep(500);
+	}
 
 	return TRUE;
 }
