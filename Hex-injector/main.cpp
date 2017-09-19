@@ -4,13 +4,13 @@
 #include <TlHelp32.h>
 #include <string>
 
-bool file_exists(const wchar_t* name)
+bool FileExists(const wchar_t* name)
 {
 	std::ifstream infile{ name };
 	return infile.good();
 }
 
-bool process_exists(const wchar_t* name, uint32_t& pid)
+bool ProcessExists(const wchar_t* name, uint32_t& pid)
 {
 	auto snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
@@ -32,7 +32,7 @@ bool process_exists(const wchar_t* name, uint32_t& pid)
 	return false;
 }
 
-bool enable_debug_privilege(HANDLE process)
+bool EnableDebugPrivilege(HANDLE process)
 {
 	LUID luid;
 	HANDLE token;
@@ -58,7 +58,7 @@ bool enable_debug_privilege(HANDLE process)
 	);
 }
 
-bool process_open(uint32_t pid, HANDLE& handle)
+bool ProcessOpen(uint32_t pid, HANDLE& handle)
 {
 	handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION |
 		PROCESS_VM_READ | PROCESS_VM_WRITE |
@@ -67,7 +67,7 @@ bool process_open(uint32_t pid, HANDLE& handle)
 	return handle != nullptr;
 }
 
-bool inject(HANDLE process, const wchar_t* dll)
+bool Inject(HANDLE process, const wchar_t* dll)
 {
 	auto thread = HANDLE{ nullptr };
 	auto exit_code = 0;
@@ -111,22 +111,22 @@ int main()
 	auto    proc_id = 0u;
 	auto    proc_handle = HANDLE{ nullptr };
 
-	enable_debug_privilege(GetCurrentProcess());
+	EnableDebugPrivilege(GetCurrentProcess());
 
 	try {
-		if (!file_exists(TARGET_FILE))
+		if (!FileExists(TARGET_FILE))
 			throw std::runtime_error{ "DLL not found." };
 
-		if (!process_exists(TARGET_PROCESS, proc_id))
+		if (!ProcessExists(TARGET_PROCESS, proc_id))
 			throw std::runtime_error{ "Process is not running." };
 
-		if (!process_open(proc_id, proc_handle)) {
+		if (!ProcessOpen(proc_id, proc_handle)) {
 			throw std::runtime_error{ "Failed to open process." };
 		}
 
 		_wfullpath(fullpath, TARGET_FILE, MAX_PATH);
 
-		if (!inject(proc_handle, fullpath)) {
+		if (!Inject(proc_handle, fullpath)) {
 			throw std::runtime_error{ "Failed to inject DLL." };
 		}
 	}
